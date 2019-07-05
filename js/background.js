@@ -4,6 +4,17 @@ const browserApi = typeof browser !== "undefined" ? browser : chrome;
 // Compute current timestamp to be able to verify returned authorization code.
 const timestamp = Date.now();
 
+// Insert content script in any GMail tabs that are open on extension load.
+// This is done because upon installing the extension, content scripts are
+// not added to existing pages, which requires a page reload in order to
+// be able to use the GCleaner app within GMail.
+browserApi.tabs.query({url: '*://mail.google.com/*'}, function(tabs) {
+  console.log(tabs);
+  tabs.forEach(tab => browserApi.tabs.executeScript(tab.id, {
+    file: 'js/gcleaner.js'
+  }));
+});
+
 // Define listeners to handle messages from content script.
 browserApi.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
