@@ -1,0 +1,32 @@
+{
+  "content_scripts": [
+    {
+      "matches": ["*://mail.google.com/*"],
+      "js": ["js/gcleaner.js"]
+    }
+  ],
+
+  "background": {
+    "scripts": ["js/background.js"]
+  },
+
+  "icons": {
+    "16": "img/icon16.png",
+    "48": "img/icon48.png",
+    "128": "img/icon128.png"
+  },
+
+  "description": "Make your inbox clean again",
+
+  "manifest_version": 2,
+
+  "name": "GCleaner",
+
+  "permissions": ["*://mail.google.com/*", "activeTab", "identity"],
+
+  "web_accessible_resources": [
+    "img/logo.png"
+  ],
+
+  "version": "0.1.1"
+}
