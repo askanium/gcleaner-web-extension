@@ -1,9 +1,6 @@
 // Get the browser api to use based on the browser type.
 const browserApi = typeof browser !== "undefined" ? browser : chrome;
 
-// Flag to switch between using an iframe and script injection to run GCleaner.
-const usesIframe = false;
-
 // Needed to insert the button that opens the popup within the GMail page.
 let counter = 300;
 
@@ -120,46 +117,27 @@ function showPopup() {
   popupBackground.style.left = '0';
   popupBackground.id = 'gcleaner-wrapper';
 
-  if (usesIframe) {
-    const iframeDom = document.createElement('iframe');
-    iframeDom.src = 'https://test.gcleaner.co/';
-    iframeDom.style.width = '1270px';
-    iframeDom.style.height = '90vh';
-    iframeDom.style.backgroundColor = '#fff';
-    iframeDom.style.border = '0';
-    iframeDom.style.boxShadow = '0 0 15px #5f5f5f';
-    iframeDom.style.position = 'absolute';
-    iframeDom.style.top = '5vh';
-    iframeDom.style.left = '50%';
-    iframeDom.style.marginLeft = '-640px';
-    iframeDom.style.overflowY = 'auto';
-    iframeDom.style.overflowX = 'hidden';
+  const popupDom = document.createElement('div');
+  popupDom.style.width = '1270px';
+  popupDom.style.height = '90vh';
+  popupDom.style.backgroundColor = '#fff';
+  popupDom.style.boxShadow = '0 0 15px #5f5f5f';
+  popupDom.style.position = 'absolute';
+  popupDom.style.top = '5vh';
+  popupDom.style.left = '50%';
+  popupDom.style.marginLeft = '-640px';
+  popupDom.style.overflowY = 'auto';
+  popupDom.style.overflowX = 'hidden';
 
-    popupBackground.appendChild(iframeDom);
-  } else {
-    //
-    const popupDom = document.createElement('div');
-    popupDom.style.width = '1270px';
-    popupDom.style.height = '90vh';
-    popupDom.style.backgroundColor = '#fff';
-    popupDom.style.boxShadow = '0 0 15px #5f5f5f';
-    popupDom.style.position = 'absolute';
-    popupDom.style.top = '5vh';
-    popupDom.style.left = '50%';
-    popupDom.style.marginLeft = '-640px';
-    popupDom.style.overflowY = 'auto';
-    popupDom.style.overflowX = 'hidden';
+  const appDom = document.createElement('div');
+  appDom.id = 'app';
 
-    const appDom = document.createElement('div');
-    appDom.id = 'app';
+  popupBackground.appendChild(popupDom);
+  popupDom.appendChild(appDom);
 
-    popupBackground.appendChild(popupDom);
-    popupDom.appendChild(appDom);
-
-    popupDom.addEventListener('click', function (e) {
-      e.stopPropagation();
-    });
-  }
+  popupDom.addEventListener('click', function (e) {
+    e.stopPropagation();
+  });
 
   document.body.append(popupBackground);
 
@@ -183,7 +161,6 @@ const unsubscribeId = setInterval(function() {
     parent = supportDiv.parentNode;
   }
   if (parent) {
-
     const btnClass = parent.firstChild.className.split(' ')[1];
     const logo = document.createElement('img');
     logo.src = browserApi.runtime.getURL('img/logo.png');
@@ -211,43 +188,40 @@ const unsubscribeId = setInterval(function() {
       localStorage.setItem('gcleaner-username', loggedUserEmail);
       showPopup();
 
-      if (!usesIframe) {
+      fetch('https://app.gcleaner.co/sources.json')
+        .then(response => response.json())
+        .then(response => {
+          // Load css only once.
+          if (!document.gcleanerLoaded) {
+            const materialIcons = document.createElement('link');
+            materialIcons.rel = 'stylesheet';
+            materialIcons.href = '//fonts.googleapis.com/css?family=Material+Icons';
+            (document.head || document.documentElement).appendChild(materialIcons);
 
-        fetch('https://app.gcleaner.co/sources.json')
-          .then(response => response.json())
-          .then(response => {
-            // Load css only once.
-            if (!document.gcleanerLoaded) {
-              const materialIcons = document.createElement('link');
-              materialIcons.rel = 'stylesheet';
-              materialIcons.href = '//fonts.googleapis.com/css?family=Material+Icons';
-              (document.head || document.documentElement).appendChild(materialIcons);
+            const vendorCss = document.createElement('link');
+            vendorCss.rel = 'stylesheet';
+            vendorCss.href = `https://app.gcleaner.co/css/${response[1]}`;
+            (document.head || document.documentElement).appendChild(vendorCss);
 
-              const vendorCss = document.createElement('link');
-              vendorCss.rel = 'stylesheet';
-              vendorCss.href = `https://app.gcleaner.co/css/${response[1]}`;
-              (document.head || document.documentElement).appendChild(vendorCss);
+            const appCss = document.createElement('link');
+            appCss.rel = 'stylesheet';
+            appCss.href = `https://app.gcleaner.co/css/${response[0]}`;
+            (document.head || document.documentElement).appendChild(appCss);
 
-              const appCss = document.createElement('link');
-              appCss.rel = 'stylesheet';
-              appCss.href = `https://app.gcleaner.co/css/${response[0]}`;
-              (document.head || document.documentElement).appendChild(appCss);
+            document.gcleanerLoaded = true;
+          }
 
-              document.gcleanerLoaded = true;
-            }
+          // Load app js each time user clicks on GCleaner button to initialize the app.
+          const vendor = document.createElement('script');
+          vendor.src = `https://app.gcleaner.co/js/${response[3]}`;
+          vendor.id = 'gcleaner-vendor';
+          (document.head || document.documentElement).appendChild(vendor);
 
-            // Load app js each time user clicks on GCleaner button to initialize the app.
-            const vendor = document.createElement('script');
-            vendor.src = `https://app.gcleaner.co/js/${response[3]}`;
-            vendor.id = 'gcleaner-vendor';
-            (document.head || document.documentElement).appendChild(vendor);
-
-            const app = document.createElement('script');
-            app.src = `https://app.gcleaner.co/js/${response[2]}`;
-            app.id = 'gcleaner-app';
-            (document.head || document.documentElement).appendChild(app);
-          });
-      }
+          const app = document.createElement('script');
+          app.src = `https://app.gcleaner.co/js/${response[2]}`;
+          app.id = 'gcleaner-app';
+          (document.head || document.documentElement).appendChild(app);
+        });
     };
     button.appendChild(logo);
     parent.prepend(button);
