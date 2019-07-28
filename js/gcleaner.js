@@ -1,6 +1,12 @@
 // Get the browser api to use based on the browser type.
 const browserApi = typeof browser !== "undefined" ? browser : chrome;
 
+// If a GCleaner launch button already exists, remove it.
+const existingGCleanerLauncher = document.getElementById('gcleaner-app-launcher');
+if (existingGCleanerLauncher) {
+  existingGCleanerLauncher.parentNode.removeChild(existingGCleanerLauncher);
+}
+
 // Needed to insert the button that opens the popup within the GMail page.
 let counter = 300;
 
@@ -209,14 +215,13 @@ const unsubscribeId = setInterval(function() {
     parent = supportDiv.parentNode;
   }
   if (parent) {
-    const btnClass = parent.firstChild.className.split(' ')[1];
     const logo = document.createElement('img');
     logo.src = browserApi.runtime.getURL('img/logo.png');
     logo.alt = 'GCleaner';
     logo.style.height = '48px';
 
     const button = document.createElement('button');
-    button.className = btnClass + ' gcleaner-app-launcher';
+    button.id = 'gcleaner-app-launcher';
     button.style.backgroundColor = 'inherit';
     button.style.border = 'none';
     button.style.padding = '0 5px';
