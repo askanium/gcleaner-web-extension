@@ -43,6 +43,10 @@ browserApi.runtime.onMessage.addListener(function(request, sender, sendResponse)
 
       document.dispatchEvent(event);
     }
+  } else if (request.hasOwnProperty('initiateGCleaner')) {
+    if (request.initiateGCleaner) {
+      initializeGCleaner();
+    }
   }
 });
 
@@ -151,6 +155,50 @@ function showPopup() {
 }
 
 /**
+ * Show the popup and load app scripts that will initialize the Vue app.
+ */
+function initializeGCleaner () {
+  const loggedUserEmail = getLoggedUserEmail();
+  localStorage.setItem('gcleaner-username', loggedUserEmail);
+  showPopup();
+
+  fetch('https://app.gcleaner.co/sources.json')
+    .then(response => response.json())
+    .then(response => {
+      // Load css only once.
+      if (!document.gcleanerLoaded) {
+        const materialIcons = document.createElement('link');
+        materialIcons.rel = 'stylesheet';
+        materialIcons.href = '//fonts.googleapis.com/css?family=Material+Icons';
+        (document.head || document.documentElement).appendChild(materialIcons);
+
+        const vendorCss = document.createElement('link');
+        vendorCss.rel = 'stylesheet';
+        vendorCss.href = `https://app.gcleaner.co/css/${response[1]}`;
+        (document.head || document.documentElement).appendChild(vendorCss);
+
+        const appCss = document.createElement('link');
+        appCss.rel = 'stylesheet';
+        appCss.href = `https://app.gcleaner.co/css/${response[0]}`;
+        (document.head || document.documentElement).appendChild(appCss);
+
+        document.gcleanerLoaded = true;
+      }
+
+      // Load app js each time user clicks on GCleaner button to initialize the app.
+      const vendor = document.createElement('script');
+      vendor.src = `https://app.gcleaner.co/js/${response[3]}`;
+      vendor.id = 'gcleaner-vendor';
+      (document.head || document.documentElement).appendChild(vendor);
+
+      const app = document.createElement('script');
+      app.src = `https://app.gcleaner.co/js/${response[2]}`;
+      app.id = 'gcleaner-app';
+      (document.head || document.documentElement).appendChild(app);
+    });
+}
+
+/**
  * Wait for the GMail page to load and insert the GCleaner
  * button that opens the popup and launches the app.
  */
@@ -183,46 +231,7 @@ const unsubscribeId = setInterval(function() {
     button.onmouseleave = function () {
       this.style.opacity = '1';
     };
-    button.onclick = function () {
-      const loggedUserEmail = getLoggedUserEmail();
-      localStorage.setItem('gcleaner-username', loggedUserEmail);
-      showPopup();
-
-      fetch('https://app.gcleaner.co/sources.json')
-        .then(response => response.json())
-        .then(response => {
-          // Load css only once.
-          if (!document.gcleanerLoaded) {
-            const materialIcons = document.createElement('link');
-            materialIcons.rel = 'stylesheet';
-            materialIcons.href = '//fonts.googleapis.com/css?family=Material+Icons';
-            (document.head || document.documentElement).appendChild(materialIcons);
-
-            const vendorCss = document.createElement('link');
-            vendorCss.rel = 'stylesheet';
-            vendorCss.href = `https://app.gcleaner.co/css/${response[1]}`;
-            (document.head || document.documentElement).appendChild(vendorCss);
-
-            const appCss = document.createElement('link');
-            appCss.rel = 'stylesheet';
-            appCss.href = `https://app.gcleaner.co/css/${response[0]}`;
-            (document.head || document.documentElement).appendChild(appCss);
-
-            document.gcleanerLoaded = true;
-          }
-
-          // Load app js each time user clicks on GCleaner button to initialize the app.
-          const vendor = document.createElement('script');
-          vendor.src = `https://app.gcleaner.co/js/${response[3]}`;
-          vendor.id = 'gcleaner-vendor';
-          (document.head || document.documentElement).appendChild(vendor);
-
-          const app = document.createElement('script');
-          app.src = `https://app.gcleaner.co/js/${response[2]}`;
-          app.id = 'gcleaner-app';
-          (document.head || document.documentElement).appendChild(app);
-        });
-    };
+    button.onclick = initializeGCleaner;
     button.appendChild(logo);
     parent.prepend(button);
     clearInterval(unsubscribeId);

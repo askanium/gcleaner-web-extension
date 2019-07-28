@@ -28,5 +28,11 @@
     "img/logo.png"
   ],
 
+  "page_action": {
+    "default_popup": "popup.html",
+    "default_title": "GCleaner",
+    "default_icon": "img/icon128.png"
+  },
+
   "version": "0.1.1"
 }
